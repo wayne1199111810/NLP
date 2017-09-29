@@ -24,4 +24,4 @@ Using the subset of Treebnak dataset, I train a decision tree classifier to clas
 | Last 3 features  | 93.28%    |
 
 ## Implementation
-	First of all, I take words in SBD.train whose label is not 'TOK'. If the label is 'EOS', I remove the period in the word and save it into my dictionary. As well as the right word. Moreover, I use LabelEncoder and OneHotEncoder to represent the words in my dictionary. Secondly, if the word ends with period, I check whether the word with or without period is in the dictionary. Once it is not in the dictionary, I represent it as unkonwn token. Finally, using the selected features to train the decision tree.
+First of all, I take words in SBD.train whose label is not 'TOK'. If the label is 'EOS', I remove the period in the word and save it into my dictionary. As well as the right word. Moreover, I use LabelEncoder and OneHotEncoder to represent the words in my dictionary. Secondly, if the word ends with period, I check whether the word with or without period is in the dictionary. Once it is not in the dictionary, I represent it as unkonwn token. Finally, using the selected features to train the decision tree.
