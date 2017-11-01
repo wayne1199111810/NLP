@@ -1,4 +1,5 @@
 # Auther: Chien-Wei Lin
+import sys
 
 START_OF_SENTENCE = '<s>'
 START_OF_SENTENCE_INSTANCE = START_OF_SENTENCE + '/' + START_OF_SENTENCE
