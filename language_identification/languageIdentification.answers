@@ -1,0 +1,23 @@
+# Part 1
+## Implementation
+First of all, create the network with input dimension of 5c and with output dimension of 3. Each output node represents the probability of the languages. Since we Slice the sentences into (chars of the sentence - 5) input vectors, I use voting for the output probabilities. For example, if I have 5 input vectors and 3 of them show that French is most probable language. Then the result will be French. Intuitively, this is similar to the ensemble models though I only have one model. I can use different inputs to represent the same sentence. The difference between all the input vectors can provide the diverse features of the sentence. This is the reason why I choose voting to determine the most probable languages.
+## Accuracy
+My result is not correct. Currently, my accuracy is around 40% to 50%. And the loss does not go down as the epoch increased. I found out that the delta in my back propagation is almost zeros. As a result, the update weights are equal to zero. The gradient should not be saturated at the first epoch. Although I have already shuffled the input, the delta is still not changing.
+
+# Part 2
+## Ways to choose hyperparameters
+The easiest way is to do the grid search. I can randomly select 3 to 5 different values of d and learning rate. After training the networks with these hyperparameters, I evaluate the accuracy, precision, and recall of the dev set. Basically, learning rate will not more than 1. Therefore, it would be more reasonable to use 〖10〗^(-1),〖10〗^(-2),10 ^3 . On the other hand, we do not want to overfit the training data. I reduce the hidden layer nodes if the performance does not decrease dramatically. Furthermore, I can dynamically adapt the learning rate based on the loss. Once the loss does not decrease for three epochs, I half the learning rate.
+
+## List hyperparameters
+(learning rate, d) 
+(10^-1, 50)
+(10^-2, 50)
+(10^-3, 50)
+(10^-1, 150)
+(10^-1, 200)
+
+## best performing set of hyperparameters
+I cannot say that I have a best performing set of hyperparameter owing to my accuracy is kind of random.
+
+## Accuracy on the best language identifier
+As the the previous 
