@@ -4,7 +4,7 @@ START_OF_SENTENCE = '<s>'
 START_OF_SENTENCE_INSTANCE = START_OF_SENTENCE + '/' + START_OF_SENTENCE
 OUTPUT_FILE = 'POS.test.out'
 
-def printEvaluation(word_count, loss)
+def printEvaluation(word_count, loss):
 	print str(word_count) + ' words'
 	print 'Loss: ' + str(loss)
 	print 'Accuracy: ' + str(1 - float(loss) / word_count)
@@ -203,7 +203,7 @@ class Viterbi(Trainer):
 			out_file.write(words[i] + '/' + tags[i] + ' ')
 		out_file.write('\n')
 
-	def deleteList(self, words, tags, score, back_ptr, sequence);
+	def deleteList(self, words, tags, score, back_ptr, sequence):
 		del words, tags, sequence
 		for i in score:
 			del i
@@ -263,6 +263,7 @@ class Viterbi(Trainer):
 
 class Trainer:
 	def __init__(self):
+		pass
 
 	def train(self, filename):
 		pass
