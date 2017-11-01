@@ -281,4 +281,4 @@ if __name__ == '__main__':
     train_file = sys.argv[1]
     test_file = sys.argv[2]
     Trainer.trainAndPredict(Frequency(train_file), train_file, test_file)
-    Trainer.trainAndPredict(Viterbi(train_file), train_file, test_file)
+    # Trainer.trainAndPredict(Viterbi(train_file), train_file, test_file)
