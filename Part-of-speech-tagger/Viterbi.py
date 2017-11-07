@@ -1,9 +1,11 @@
-# Auther: Chien-Wei Lin
+# Author: Chien-Wei Lin (chienwli)
 import sys
+import numpy as np
 
 START_OF_SENTENCE = '<s>'
 START_OF_SENTENCE_INSTANCE = START_OF_SENTENCE + '/' + START_OF_SENTENCE
 OUTPUT_FILE = 'POS.test.out'
+unk = ''
 
 def printEvaluation(word_count, loss):
     print str(word_count) + ' words'
@@ -16,6 +18,7 @@ class Dictionary:
         self.createFromWord2idx()
         self.createFromTag2idx()
         self.createFromIdx2Tag()
+        self.createFromIdx2Word()
 
     def createDictionary(self, filename):
         self.dic = set()
@@ -23,11 +26,12 @@ class Dictionary:
         with open(filename, 'r') as f:
             for line in f:
                 line = line.strip()
-                words = list([instance.split('/')[0] for instance in line.split()])
-                tags = list([instance.split('/')[1] for instance in line.split()])
+                words = list([instance[0:instance.rfind('/')] for instance in line.split()])
+                tags = list([instance[instance.rfind('/')+1:] for instance in line.split()])
                 self.dic.update(words)
                 self.pos_tags.update(tags)
         self.addStartOfSentenceToDic()
+        self.dic.add(unk)
         self.dic = list(self.dic)
         self.pos_tags = list(self.pos_tags)
 
@@ -71,6 +75,8 @@ class Dictionary:
         return self.from_tag2idx[tag]
 
     def getWordIdx(self, word):
+        if word not in self.dic:
+            return self.from_word2idx[unk]
         return self.from_word2idx[word]
 
     def getWordFromIdx(self, idx):
@@ -78,46 +84,6 @@ class Dictionary:
 
     def getTagFromIdx(self, idx):
         return self.from_idx2tag[idx]
-
-class Bigram:
-    def __init__(self, filename):
-        self.my_dic = Dictionary(filename)
-        self.initBigram()
-        self.constructBigram(filename)
-
-    def initBigram(self):
-        num_of_tags = len(self.my_dic.getTags())
-        num_of_words = len(self.my_dic.getWords())
-        self.tag_bigram = [[0 for j in range(num_of_tags)] for i in range(num_of_tags)]
-        self.word_given_tag_bigram = [[0 for j in range(num_of_words)] for i in range(num_of_tags)]
-
-    def constructBigram(self, filename):
-        with open(filename, 'r') as f:
-            for line in f:
-                instances = list([START_OF_SENTENCE_INSTANCE]) + line.strip().split()
-                for pre_ins, next_ins in zip(instances[:-1], instances[1:]):
-                    pre_w, pre_t = pre_ins.split('/')
-                    next_w, next_t = next_ins.split('/')
-                    self.tagsBigramPlus1(pre_t, next_t)
-                    self.wordGivenTagBigramPlus1(next_w, next_t)
-                    self.normalizeBigramToProb()
-
-    def tagsBigramPlus1(self, pre_tag, next_tag):
-        pre_tag_idx = self.my_dic.getTagIdx(pre_tag)
-        next_tag_idx = self.my_dic.getTagIdx(next_tag)
-        self.tag_bigram[pre_tag_idx][next_tag_idx] += 1
-
-    def wordGivenTagBigramPlus1(self, word, tag):
-        word_idx = self.my_dic.getWordIdx(word)
-        tag_idx = self.my_dic.getTagIdx(tag)
-        self.word_given_tag_bigram[tag_idx][word_idx] += 1
-
-    def normalizeBigramToProb(self):
-        number_of_tags = len(self.my_dic.getTags())
-        for pre_idx in range(len(self.number_of_tags)):
-            tag_count = sum(self.tag_bigram[pre_idx])
-            for next_idx in range(number_of_tags):
-                self.tag_bigram[pre_idx][next_idx] = self.tag_bigram[pre_idx][next_idx] / tag_count
 
 class Trainer:
     def __init__(self):
@@ -157,13 +123,22 @@ class Frequency(Trainer):
             word = self.my_dic.getWordFromIdx(word_idx)
             tag = self.my_dic.getTagFromIdx(tag_idx)
             self.from_word_2_most_freq_Tag[word] = tag
+        self.most_freq_tag = self.getMostAppearTag()
+
+    def getMostAppearTag(self):
+        num_of_tags = len(self.my_dic.getTags())
+        num_of_words = len(self.my_dic.getWords())
+        tags_count = list([sum([self.word_tag_table[j][i] for j in range(num_of_words)]) for i in range(num_of_tags)])
+        max_value = max(tags_count)
+        tag_idx = tags_count.index(max_value)
+        return self.my_dic.getTagFromIdx(tag_idx)
 
     def train(self, filename):
         with open(filename, 'r') as f:
             for line in f:
                 instances = line.strip().split()
                 for instance in instances:
-                    word, tag = instance.split('/')
+                    word, tag = instance[0:instance.rfind('/')], instance[instance.rfind('/')+1:]
                     self.wordTagTablePlus1By(word, tag)
         self.createFromWord2MostFreqTag()
 
@@ -175,37 +150,101 @@ class Frequency(Trainer):
             for line in f:
                 instances = line.strip().split()
                 for instance in instances:
-                    word, tag = instance.split('/')
+                    word, tag = instance[0:instance.rfind('/')], instance[instance.rfind('/')+1:]
                     word_count += 1
-                    if self.from_word_2_most_freq_Tag[word] != tag:
+                    if word not in self.from_word_2_most_freq_Tag:
+                        if tag != self.most_freq_tag:
+                            loss += 1
+                    elif self.from_word_2_most_freq_Tag[word] != tag:
                         loss += 1
         printEvaluation(word_count, loss)
 
+class Bigram:
+    def __init__(self, dic, filename):
+        self.my_dic = dic
+        self.initBigram()
+        print 'create bigram'
+        self.constructBigram(filename)
+
+    def initBigram(self):
+        num_of_tags = len(self.my_dic.getTags())
+        num_of_words = len(self.my_dic.getWords())
+        self.tag_bigram = np.zeros((num_of_tags, num_of_tags))
+        self.word_given_tag_bigram = np.zeros((num_of_tags, num_of_words))
+
+    def constructBigram(self, filename):
+        with open(filename, 'r') as f:
+            for line in f:
+                instances = list([START_OF_SENTENCE_INSTANCE]) + line.strip().split()
+                for pre_ins, next_ins in zip(instances[:-1], instances[1:]):
+                    pre_t = pre_ins[pre_ins.rfind('/')+1:]
+                    next_w, next_t = next_ins[0:next_ins.rfind('/')], next_ins[next_ins.rfind('/')+1:]
+                    self.tagsBigramPlus1(pre_t, next_t)
+                    self.wordGivenTagBigramPlus1(next_w, next_t)
+        self.laplaceSmooth()
+
+    def tagsBigramPlus1(self, pre_tag, next_tag):
+        pre_tag_idx = self.my_dic.getTagIdx(pre_tag)
+        next_tag_idx = self.my_dic.getTagIdx(next_tag)
+        self.tag_bigram[pre_tag_idx][next_tag_idx] += 1
+
+    def wordGivenTagBigramPlus1(self, word, tag):
+        word_idx = self.my_dic.getWordIdx(word)
+        tag_idx = self.my_dic.getTagIdx(tag)
+        self.word_given_tag_bigram[tag_idx][word_idx] += 1
+
+    def laplaceSmooth(self):
+        num_of_tags = len(self.my_dic.getTags())
+        num_of_words = len(self.my_dic.getWords())
+        count = np.sum(self.tag_bigram, axis=1) + num_of_tags
+        self.tag_bigram = (self.tag_bigram + 1) / count[:,None]
+        count = np.sum(self.word_given_tag_bigram, axis=1) + num_of_words
+        self.word_given_tag_bigram = (self.word_given_tag_bigram + 1) / count[:,None]
+        print 'size of tag_bigram:' + str(self.tag_bigram.shape)
+        print 'size of word given tag bigram:' + str(self.word_given_tag_bigram.shape)
+
 class Viterbi(Trainer):
-    def __init__(self):
+    def __init__(self, filename):
         self.my_dic = Dictionary(filename)
 
     def train(self, filename):
-        self.bigram = Bigram(filename)
+        self.bigram = Bigram(self.my_dic, filename)
 
     def predict(self, filename):
         print '==== Predict from Viterbi Algorithm ===='
-        num_of_total_tags = len(self.my_dic.getTags())
+        num_of_tags = len(self.my_dic.getTags())
         out_file = open(OUTPUT_FILE, 'w')
-        word_count, loss = 0, 0
+        word_count, loss, unk_count = 0, 0, 0
+        line_num = 0
         with open(filename, 'r') as f:
             for line in f:
+                line_num += 1
+                if line_num % 50 == 0:
+                    print str(line_num / 5) + '%'
                 instances = line.strip().split()
                 num_of_words = len(instances)
-                words = [instance.split('/')[0] for instance in instances]
-                tags = [instance.split('/')[1] for instance in instances]
-                score, back_ptr = self.iteration(words, num_of_total_tags)
-                sequence = self.sequenceIdentification(words, score, back_ptr)
+                filter_words = list([instance[0:instance.rfind('/')] for instance in instances])
+                unk_count += self.replaceUnknownWithUnk(filter_words)
+                tags = list([instance[instance.rfind('/')+1:] for instance in instances])
+                score = np.zeros((num_of_tags, num_of_words))
+                back_ptr = np.zeros((num_of_tags, num_of_words))
+                sequence = np.zeros((num_of_words))
+                self.iteration(filter_words, num_of_tags, score, back_ptr)
+                self.sequenceIdentification(filter_words, score, back_ptr, sequence)
                 word_count, loss = self.evaluate(word_count, loss, sequence, tags)
-                self.writeFile(out_file, words, sequence)
-                self.deleteList(words, tags, score, back_ptr, sequence)
+                origin_words = list([instance[0:instance.rfind('/')] for instance in instances])
+                self.writeFile(out_file, origin_words, sequence)
+        print 'number of unk words:' + str(unk_count)
         out_file.close()
         printEvaluation(word_count, loss)
+
+    def replaceUnknownWithUnk(self, words):
+        count = 0
+        for i in range(len(words)):
+            if words[i] not in self.my_dic.dic:
+                count += 1
+                words[i] = unk
+        return count
 
     def evaluate(self, word_count, loss, sequence, tags):
         for i in range(len(tags)):
@@ -214,71 +253,51 @@ class Viterbi(Trainer):
             loss = loss + 1 if tags[i] != predict_tag else loss
         return word_count, loss
 
-    def writeFile(self, out_file, words, tags):
+    def writeFile(self, out_file, words, sequence):
         for i in range(len(words)):
-            out_file.write(words[i] + '/' + tags[i] + ' ')
+            tag = self.my_dic.getTagFromIdx(sequence[i])
+            out_file.write(words[i] + '/' + tag + ' ')
         out_file.write('\n')
 
-    def deleteList(self, words, tags, score, back_ptr, sequence):
-        del words, tags, sequence
-        for i in score:
-            del i
-        for i in back_ptr:
-            del i
-        del score, back_ptr
-
-    def initialization(self, word, number_of_tags, num_of_words):
-        score = [[0 for j in range(num_of_words)]for i in range(num_of_tags)]
-        back_ptr = [[0 for j in range(num_of_words)]for i in range(num_of_tags)]
+    def initialization(self, word, num_of_tags, score):
         word_idx = self.my_dic.getWordIdx(word)
         for tag_idx in range(num_of_tags):
             p_w_given_t =  self.bigram.word_given_tag_bigram[tag_idx][word_idx]
             start_of_sentece_idx = self.my_dic.getTagIdx(START_OF_SENTENCE)
-            p_t_given_start_of_sentence = self.tag_bigram[start_of_sentece_idx][tag_idx]
+            p_t_given_start_of_sentence = self.bigram.tag_bigram[start_of_sentece_idx][tag_idx]
             score[tag_idx][0] = p_w_given_t * p_t_given_start_of_sentence
-        return score, back_ptr
 
-    def iteration(self, words, num_of_tags):
+    def iteration(self, words, num_of_tags, score, back_ptr):
         num_of_words = len(words)
-        if num_of_words == 0:
-            return
-        score, back_ptr = self.initialization(words[0], num_of_tags, num_of_words)
+        self.initialization(words[0], num_of_tags, score)
         for i_th_word in range(1, num_of_words):
             word_idx = self.my_dic.getWordIdx(words[i_th_word])
             for tag_idx in range(num_of_tags):
                 p_w_given_t =  self.bigram.word_given_tag_bigram[tag_idx][word_idx]
-                max_idx, max_value = self.getMaxScoreBigram()
+                max_idx, max_value = self.getMaxScoreBigram(i_th_word, tag_idx, score, num_of_tags)
+                score[tag_idx][i_th_word] = p_w_given_t * max_value
                 back_ptr[tag_idx][i_th_word] = max_idx
+        return score, back_ptr
 
     def getMaxScoreBigram(self, i_th_word, tag_idx, score, num_of_tags):
         max_idx, max_value = 0, -1
         for j in range(num_of_tags):
-            p_Tag_idx_given_j = self.tag_bigram[j][tag_idx]
+            p_Tag_idx_given_j = self.bigram.tag_bigram[j][tag_idx]
             value = score[j][i_th_word-1] * p_Tag_idx_given_j
             if max_value <= value:
                 max_value = value
                 max_idx = j
         return max_idx, max_value
 
-    def sequenceIdentification(self, words, score, back_ptr):
-        sequence = [0 for i in range(len(words))]
-        sequence[-1] = self.getMaxTagFromScore(score)
+    def sequenceIdentification(self, words, score, back_ptr, sequence):
+        sequence[-1] = np.argmax(score, axis = 0)[-1]
         for w in range(len(words)-1):
-            idx = len(words) - 1 - w
-            sequence[idx] = back_ptr[sequence[idx+1]][idx+1]
+            idx = len(words) - 2 - w
+            sequence[idx] = back_ptr[int(sequence[idx+1])][idx+1]
         return sequence
-
-    def getMaxTagFromScore(self, score):
-        opt_t = 0
-        max_value = -1
-        for i in range(len(score)):
-            if score[i][-1] >= max_value:
-                max_value = score[i][-1]
-                opt_t = i
-        return opt_t
 
 if __name__ == '__main__':
     train_file = sys.argv[1]
     test_file = sys.argv[2]
     Trainer.trainAndPredict(Frequency(train_file), train_file, test_file)
-    # Trainer.trainAndPredict(Viterbi(train_file), train_file, test_file)
+    Trainer.trainAndPredict(Viterbi(train_file), train_file, test_file)
