@@ -110,7 +110,7 @@ class NB:
 		acc = (1 - float(loss) / length) * 100
 		acc = float("{0:.2f}".format(acc))
 		print('Loss: ' + str(loss))
-		print('Accuracy: ' + str(acc))
+		print('Accuracy: ' + str(acc) + '%')
 		# self.printWrong(predict_acts, test_instances)
 
 	def printWrong(self, predict_acts, test_instances):

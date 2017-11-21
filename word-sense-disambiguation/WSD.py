@@ -152,7 +152,7 @@ class NB:
 		loss = sum([1 if true_senses[i] != predict_senses[i] else 0 for i in range(length)])
 		acc = (1 - float(loss) / length) * 100
 		acc = float("{0:.2f}".format(acc))
-		self.printWrong(predict_senses, test_instances)
+		# self.printWrong(predict_senses, test_instances)
 		print('Loss: ' + str(loss))
 		print('Accuracy: ' + str(acc) + '%')
 		return acc
