@@ -1,0 +1,99 @@
+Author: Chien-Wei Lin
+Unique Name: chienwli
+
+* bass.wsd
+** Folds: 1
+	Accuracy: 72.73%
+** Folds: 2
+	Accuracy: 95.45%
+** Folds: 3
+	Accuracy: 90.91%
+** Folds: 4
+	Accuracy: 100.0%
+** Folds: 5
+	Accuracy: 94.74%
+==== Average Testing Accuracy ====
+90.766%
+
+* crane.wsd
+** Folds: 1
+	Accuracy: 68.42%
+** Folds: 2
+	Accuracy: 73.68%
+** Folds: 3
+	Accuracy: 73.68%
+** Folds: 4
+	Accuracy: 78.95%
+** Folds: 5
+	Accuracy: 84.21%
+==== Average Testing Accuracy ====
+75.788%
+
+* motion.wsd
+** Folds: 1
+	Accuracy: 48.78%
+** Folds: 2
+	Accuracy: 58.54%
+** Folds: 3
+	Accuracy: 34.15%
+** Folds: 4
+	Accuracy: 41.46%
+** Folds: 5
+	Accuracy: 37.84%
+==== Average Testing Accuracy ====
+44.154%
+
+* palm.wsd
+** Folds: 1
+	Accuracy: 78.05%
+** Folds: 2
+	Accuracy: 80.49%
+** Folds: 3
+	Accuracy: 87.8%
+** Folds: 4
+	Accuracy: 82.93%
+** Folds: 5
+	Accuracy: 78.38%
+==== Average Testing Accuracy ====
+81.53%
+
+* plant.wsd
+** Folds: 1
+	Accuracy: 89.47%
+** Folds: 2
+	Accuracy: 73.68%
+** Folds: 3
+	Accuracy: 71.05%
+** Folds: 4
+	Accuracy: 86.84%
+** Folds: 5
+	Accuracy: 80.56%
+==== Average Testing Accuracy ====
+80.32%
+
+* tank.wsd
+** Folds: 1
+	Accuracy: 75.61%
+** Folds: 2
+	Accuracy: 68.29%
+** Folds: 3
+	Accuracy: 78.05%
+** Folds: 4
+	Accuracy: 85.37%
+** Folds: 5
+	Accuracy: 86.49%
+==== Average Testing Accuracy ====
+78.762%
+
+* Three Error in {plant}
+** id="plant.1000049" senseid="plant%living"
+	Perhaps there was something more than coherence at stake. A theological college is a narrow world, frequently compared to a greenhouse. After only eighteen months breathing the dust of the docks, Ramsey taught for six years and a half in a greenhouse. If he went to be the head gardener of another greenhouse and did another ten years  teaching among the geraniums, what species of hothouse  <head>plant</head>  might result? 
+
+** id="plant.1000110" senseid="plant%factory"
+	We've always done it this way is as daft an excuse for an industrial manufacturing process which has become fossilised as it is for saying that fossils have a life of their own. In other words, watching the film persuaded me that despite the intricacy of the life-producing process, it is not wrong to think of helping it along in certain ways. Thus I am not in principle against the idea of research into embryos. However, the second compelling point which struck me in watching the film was a realisation that this was like watching a film of a milk bottling  <head>plant</head> . 
+
+** instance="plant.1000172" senseid="plant%factory"
+	VIVA EGGLE! Dear Guitarist Following your enthusiastic review of the Patrick Eggle Berlin Pro in March, I was motivated to try one and subsequently purchased a deluxe model with non standard options at very reasonable cost. I travelled to the  <head>plant</head>  to collect the guitar and was treated to a comprehensive tour of what I can confirm as an impressive facility of skilled and committed people in every department. 
+
+** Summary
+	There are several problems when using the Naive Bayes for this task. First, we do not have data preprocessing and do not consider wordform for this dataset. For example, 'factory' and 'factories' are treated as different words. This might result in some rare wordforms have lower probability, but it is the same as the other general word form. Consequently, if we can use tokenized dataset, we might have better performance. Secondly, we can remove stop words from each instance. Since we only care about the meaningful words. Finally, the main issue in this assignment is the bias of the dataset. It one class might has very few instances. Additionally, the class with few instances does not have enough dictionary to perform well in Naive Bayes. For example, the first fold in bass.wsd has |V| = 176 for {fish}, |V| = 2617 for {music}, and |fish| = 4, |music| = 81. As the result, the probability of unknown tokens will be P(unk | S=fish) = (1) / (4 + 176) and P(unk | S=music) = (1) / (81+2617). This situation will cause some issue. Probability of any words in sense {music} will be P(F|S=music) = (count+1)/(81+2617) which might be smaller than the probability of unknown tokens in sense {fish}. If there are many unknown tokens in a sentence, especially we have such extreme bias data, it might result in such low accuracy. Downsampling and collect more data, might be one solution for this issue.

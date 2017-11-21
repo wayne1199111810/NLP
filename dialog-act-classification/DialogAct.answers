@@ -1,0 +1,17 @@
+Author: Chien-Wei Lin
+uniquename: chienwli
+
+* Accuracy: 56.36%
+
+* Three Error
+** "Yes"
+	It shout be [pull-bool], but it is predicted as [push-general-info-inform]
+	Generally speaking, this example is not into the [pull-bool] category. [pull-bool] is used when we are expecting a form of yes or no in response. There are many short responses in the testing are annotated as [pull-bool] For example, "Yes", "No", and "Sure". In contrast, many [push-general-info-inform] instance contain "Yes". It is possible that Naive Bayes to predict such dialog-act from the given dataset. In my opinion, it might be helpful to add another category for this type of short answers.
+
+** "How can I help you today?"
+	Should be [pull-select], but predict as [social-open-close]
+	Based on my observation in the training dataset, "How can I help you today?" can be annotated as [social-open-close], [social-other], [social-continue], [pull-other], [pull-fill] for the exactly the same utterance. From this prospective, it is the predicttion from the most frequency. The error is obviously from the variance of the data. It cannot be solved by the algorithm.
+
+** "Yes, in some sense it is difficult. Especially if you didn't do a good job in EECS280."
+	It should be [push-conditional-inform], but it is predicted as [push-conditional-suggest]
+	This example is kind of confused for me. It is even not obvious for me to identify the difference. I would say it is a suggestion rather than information.
